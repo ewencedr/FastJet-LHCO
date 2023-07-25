@@ -60,8 +60,8 @@ def main():
     # Actually cluster the data
     # this is what takes a long time
     print("Clustering...")
-    out_qcd = cluster(qcd_data, n_events=1000)  # len(qcd_data))
-    out_sig = cluster(sig_data, n_events=500)  # len(sig_data))
+    out_qcd = cluster(qcd_data, n_events=len(qcd_data))
+    out_sig = cluster(sig_data, n_events=len(sig_data))
 
     print("Processing...")
     for c, jets in enumerate([out_qcd, out_sig]):
