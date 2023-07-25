@@ -3,14 +3,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import h5py
 import fastjet as fj
-from tqdm import tqdm
 
 
 def cluster(data, n_events=1000):
     out = []
 
     # Loop over events
-    for ievt in tqdm(range(n_events)):
+    for ievt in range(n_events):
+        if ievt % 10000 == 0:
+            print(f"step: {ievt}")
         # Build a list of all particles
         pjs = []
         for i in range(data.shape[1]):
@@ -31,8 +32,14 @@ def cluster(data, n_events=1000):
 
 
 def main():
+    print("Loading data...")
     filepath = "/beegfs/desy/user/ewencedr/data/lhco/events_anomalydetection_v2.h5"
-    filepath_save = "/beegfs/desy/user/ewencedr/data/lhco/events_anomalydetection_v2_processed.h5"
+    filepath_save = (
+        "/beegfs/desy/user/ewencedr/data/lhco/events_anomalydetection_v2_processed_fastjet.h5"
+    )
+    filepath_save_raw = (
+        "/beegfs/desy/user/ewencedr/data/lhco/events_anomalydetection_v2_raw_fastjet.h5"
+    )
 
     # Load everything into memory
     df = pandas.read_hdf(filepath)
@@ -56,6 +63,9 @@ def main():
     out_qcd = cluster(qcd_data, n_events=len(qcd_data))
     # out_sig = cluster(sig_data, n_events=len(sig_data))
 
+    with h5py.File(filepath_save_raw, "w") as f:
+        f.create_dataset("raw", data=out_qcd)
+
     # separate the leading and subleading jets
     jets = out_qcd
     x_masses = []
@@ -73,17 +83,21 @@ def main():
     y_jets = np.array(y_jets)
 
     # get padded constituents, relative coordinates and mask in the wanted format
+    len_padding = 300
     constituents = []
     rel_constituents = []
     mask = []
-    len_padding = 300
+    jet_mass = []
+    jet_pt = []
+    jet_eta = []
+    jet_phi = []
     for jet in x_jets:
         # get constituents
         const_pt = np.array(
             [(jet.constituents()[i].perp()) for i in range(len(jet.constituents()))]
         )
         const_eta = np.array(
-            [(jet.constituents()[i].rapidity()) for i in range(len(jet.constituents()))]
+            [(jet.constituents()[i].pseudorapidity()) for i in range(len(jet.constituents()))]
         )
         const_phi = np.array(
             [(jet.constituents()[i].phi_std()) for i in range(len(jet.constituents()))]
@@ -105,7 +119,7 @@ def main():
         # relative coordinates
         rel_constituents_temp = padded_consts.copy()
         rel_constituents_temp[:, 0] = rel_constituents_temp[:, 0] / jet.perp()
-        rel_constituents_temp[:, 1] = rel_constituents_temp[:, 1] - jet.rapidity()
+        rel_constituents_temp[:, 1] = rel_constituents_temp[:, 1] - jet.pseudorapidity()
         rel_constituents_temp[:, 2] = rel_constituents_temp[:, 2] - jet.phi_std()
 
         # fix phi range
@@ -120,12 +134,32 @@ def main():
             rel_constituents_temp[:, 2],
         )
 
+        # jet variables & append to list
+        jet_mass.append(jet.m())
+        jet_pt.append(jet.perp())
+        jet_eta.append(jet.pseudorapidity())
+        jet_phi.append(jet.phi_std())
         constituents.append(padded_consts)
         rel_constituents.append(rel_constituents_temp)
         mask.append(padded_mask)
     mask = np.array(mask)
     constituents = np.array(constituents) * mask[:, :, None]
     rel_constituents = np.array(rel_constituents) * mask[:, :, None]
+    jet_mass = np.array(jet_mass)
+    jet_pt = np.array(jet_pt)
+    jet_eta = np.array(jet_eta)
+    jet_phi = np.array(jet_phi)
+
+    # remove constituents with 0 pT and very high etas
+    counter = 0
+    for count_i, i in enumerate(rel_constituents):
+        for count_j, j in enumerate(i):
+            if j[1] > 1000:
+                counter += 1
+                rel_constituents[count_i, count_j, 1] = 0
+                rel_constituents[count_i, count_j, 2] = 0
+                mask[count_i, count_j] = 0
+    print(f"removed {counter} constituents")
 
     print(f"constituents shape: {constituents.shape}")
     print(f"rel_constituents shape: {rel_constituents.shape}")
@@ -140,4 +174,5 @@ def main():
 
 
 if __name__ == "__main__":
+    print(f"Running {__file__}")
     main()
