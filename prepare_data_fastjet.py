@@ -57,7 +57,7 @@ def main():
 
     # change the shape of the data into (n_events, n_particles, n_features)
     background_reduced = background[:, :2100]
-    signal_reduced = background[:, :2100]
+    signal_reduced = signal[:, :2100]
     qcd_data = background_reduced.reshape(-1, 700, 3)
     sig_data = signal_reduced.reshape(-1, 700, 3)
 
