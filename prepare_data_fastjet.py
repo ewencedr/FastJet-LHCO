@@ -3,19 +3,23 @@ import matplotlib.pyplot as plt
 import numpy as np
 import h5py
 import fastjet as fj
+from tqdm import tqdm
 
 
 def cluster(data, n_events=1000):
     out = []
 
     # Loop over events
-    for ievt in range(n_events):
-        if ievt % 10000 == 0:
-            print(f"step: {ievt}")
+    for ievt in tqdm(range(n_events)):
         # Build a list of all particles
         pjs = []
         for i in range(data.shape[1]):
             pj = fj.PseudoJet()
+
+            # skip zero padded particles
+            if data[ievt, i, 0] == 0:
+                continue
+
             pj.reset_PtYPhiM(data[ievt, i, 0], data[ievt, i, 1], data[ievt, i, 2], 0)
             pjs.append(pj)
 
@@ -35,7 +39,7 @@ def main():
     print("Loading data...")
     filepath = "/beegfs/desy/user/ewencedr/data/lhco/events_anomalydetection_v2.h5"
     filepath_save = (
-        "/beegfs/desy/user/ewencedr/data/lhco/events_anomalydetection_v2_processed_fastjet_test"
+        "/beegfs/desy/user/ewencedr/data/lhco/events_anomalydetection_v2_processed_fastjet_fast"
     )
     filepath_save_raw = (
         "/beegfs/desy/user/ewencedr/data/lhco/events_anomalydetection_v2_raw_fastjet_test.h5"
@@ -60,8 +64,8 @@ def main():
     # Actually cluster the data
     # this is what takes a long time
     print("Clustering...")
-    out_qcd = cluster(qcd_data, n_events=1000)  # len(qcd_data))
-    out_sig = cluster(sig_data, n_events=1000)  # len(sig_data))
+    out_qcd = cluster(qcd_data, n_events=len(qcd_data))
+    out_sig = cluster(sig_data, n_events=len(sig_data))
 
     print("Processing...")
     for c, jets in enumerate([out_qcd, out_sig]):
