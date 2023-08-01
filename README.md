@@ -1,6 +1,6 @@
 <div align="center">
 
-# Fastjet Example on LHCO Data
+# Jet Clustering with FastJet on LHC-Olympics Data
 
 
 [![python](https://img.shields.io/badge/-Python_3.10-blue?logo=python&logoColor=white)](https://www.python.org/)
