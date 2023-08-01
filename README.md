@@ -17,7 +17,7 @@ The [LHC-Olympics dataset](https://lhco2020.github.io/homepage/) is used for thi
 
 The FastJet library offers two main interfaces on how to perform clustering on HEP data.
 - The Awkward interface
-- The Classic interface
+- The Classic interface (ToDo)
 
 This repository contains two notebooks, one for each interface.
 
