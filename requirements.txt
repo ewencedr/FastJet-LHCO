@@ -1,0 +1,9 @@
+awkward==2.3.1
+cycler==0.11.0
+EnergyFlow==1.3.2
+fastjet==3.4.1.2
+h5py==3.8.0
+matplotlib==3.7.1
+numpy==1.23.5
+pandas==2.0.0
+vector==1.1.0
